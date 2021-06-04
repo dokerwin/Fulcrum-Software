@@ -47,8 +47,7 @@ public:
 		tm ltm;
 
 		localtime_s(&ltm, &now);
-		return std::to_string(1900 + ltm.tm_year) + "." + std::to_string(1 + ltm.tm_mon) + "." + std::to_string(ltm.tm_mday) +
-			"." + std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1)+";";
+		return std::to_string(1900 + ltm.tm_year) + "." + std::to_string(1 + ltm.tm_mon) + "." + std::to_string(ltm.tm_mday) +" " + std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1)+";";
 
 	}
 
@@ -108,7 +107,7 @@ public:
 	OneLog& operator<<(int add) {
 
 		this->add.emplace(add);
-		this->message += std::to_string(add) + " ";
+		this->message += std::to_string(add);
 		return *this;
 	}
 
@@ -118,17 +117,19 @@ public:
 
 		std::ostringstream ss;
 		ss << std::this_thread::get_id();
-		std::string  idstr = ss.str();
+		std::string  idstr =  "(" + ss.str() +"): ";
+		std::string stat =" " + status.first +"; ";
+
 
 
 		if (prefix!="") {
-			return getTime() + ":" + status.first + ":" + _perfix + ":" + idstr + ":" + message + ";\n";
+			return getTime() + stat + _perfix + ":" + idstr  + message + ";\n";
 
 		}
 
 		else
 		{
-			return getTime() + ":" + status.first + ":" + idstr + ":" + message + ";\n";
+			return getTime() + stat  + idstr  + message + ";\n";
 		}
 
 	}
