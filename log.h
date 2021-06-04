@@ -37,6 +37,7 @@ public:
 
 	OneLog(){
 		stat = false;
+
 		this->status.first = "INFO", this->status.second = 4;
 		threadID = std::this_thread::get_id();
 
@@ -89,42 +90,69 @@ public:
 
 	}
 	int getStatus() {
-	
+
+		
 		return status.second;
 	}
 	
 	OneLog& operator<<(double a) {
 
+		std::ostringstream streamObj3;
+		// Set Fixed -Point Notation
+		streamObj3 << std::fixed;
+		// Set precision to 2 digits
+		streamObj3.precision(1);
+		//Add double to stream
+		streamObj3 << a;
+		// Get string from output string stream
+		std::string strObj3 = streamObj3.str();
+
+
+
+
+
+
+
+		this->message += strObj3;
 		return *this;
 	}
 
 	OneLog& operator<<(std::string msg) {
 		
 		
-		this->message = msg;
-
+		this->message += msg;
+		stat = true;
 		return *this;
 	}
 
 	OneLog& operator<<(int add) {
 		stat = true;
+		
+		
 		this->add.emplace(add);
+		this->message += std::to_string(add)+" ";
+
+
+
 		return *this;
 	}
 
 
 
-	std::string getLog() {
+	std::string getLog(std::string _perfix) {
 
 		std::ostringstream ss;
 		ss << std::this_thread::get_id();
 		std::string  idstr = ss.str();
+		std::cout << _perfix;
 
-		if (add.has_value()&&prefix!="") {
-			return getTime() + ":" + status.first + ":" + prefix + ":" + idstr + ":" + message + ":" + std::to_string(add.value()) + ";\n";
+		if (add.has_value()) {
+			return getTime() + ":" + status.first + ":" + _perfix + ":" + idstr + ":" + message  +";\n";
+
+			
+
 		}
 		
-			
 		else
 		{
 		return getTime() + ":" + status.first + ":" + idstr + ":" + message + ";\n";
@@ -139,7 +167,7 @@ protected:
 	std::optional<int>add;
 	 double additional;
 	 std::string  prefix;
-	 std::pair< std::string, int> status;
+	 std::pair< std::string, int> status ;
 	 std::thread::id threadID;
 	
 	//....date, prefix, status, sufix
@@ -164,77 +192,79 @@ class WrapperLog {
 
 public:
 
-
-
 	WrapperLog(WrapperLog& a){
 		logType = a.logType;
 		path = a.path;
 		container = a.container;
 	}
 
-	WrapperLog(){
+	WrapperLog(std::string perfix=""){
+
+
 		if (!container.has_value()) {
 			container = OneLog();
 		}
-
-		operator_scop = false;
+		this->prefix = perfix;
+	
 
 	}
 
 	OneLog& operator<<(std::string msg) {
 		
+		container.emplace(OneLog());
+
 		container.value().setMessage(msg);
-		return container.value();
-	}
 
-	OneLog& operator()(int status) {
-		
-		container.value().setStatus(status);
-		container.value().stat = true;
-		return container.value();
+		if (container.value().getMessage() != "") {
 
-	}
-	void saveAll() {
-		
-		if (logType == LogType::console)
-			saveToConsole();
-		else if (logType == LogType::file)
-			saveToFile(path);
-	
-	}
-	~WrapperLog() {
-
-		if (container.value().getStatus() != INFO) {
 			saveAll();
+			container.emplace(OneLog());
+
 		}
 		
+		return container.value();
+	}
+
+
+	OneLog& operator()(int status) {
+
+		if (container.value().getMessage() != "") {
+			saveAll();
+		}
+		container.emplace(OneLog());
+		container.value().setStatus(status);
+		return container.value();
+	}
+	void saveAll() {
+		if (logType==LogType::console)
+			saveToConsole();
+		else if (logType==LogType::file)
+			saveToFile();
+	}
+	~WrapperLog(){
+		if (container.value().getMessage()!=""){
+		saveAll();
+		}
 	}
 
 	bool operator_scop;
 	LogType logType;
 	std::optional<OneLog> container;
 	std::string path;
-
+	std::string prefix;
 
 private:
 static std::mutex mutex;
 	
 	void saveToConsole() {
-		if(container.value().getMessage() == "") {
-			return;
-		}
-
 		mutex.lock();
-		std::cout << container.value().getLog();
+		std::cout << container.value().getLog(prefix);
 		mutex.unlock();
 	}
-	void saveToFile(std::string path){
-		if (container.value().getMessage() == "") {
-			return;
-		}
+	void saveToFile(){
 		mutex.lock();
 		std::ofstream MyFile(path, std::ios::out|std::ios::app );
-		MyFile << container.value().getLog();
+		MyFile << container.value().getLog(prefix);
 		mutex.unlock();
 	}
 };
@@ -264,9 +294,8 @@ WrapperLog getLogger(std::string path) {
 
 WrapperLog getLogger(std::string path, std::string perfix) {
 
-	WrapperLog w;
+	WrapperLog w(perfix);
 	w.path = path;
-	w.container.value().setPrefix(perfix);
 	w.logType = LogType::file;
 
 	return w;
