@@ -22,48 +22,40 @@ class OneLog {
 public:
 
 
-	OneLog(const OneLog& A){
-	
-
+	OneLog(const OneLog& A) {
 		message = A.message;
 		add = A.add;
 		additional = A.additional;
 		prefix = A.prefix;
 		status = A.status;
 		threadID = A.threadID;
-	
 	}
 
 
-	OneLog(){
-		stat = false;
-
+	OneLog() {
 		this->status.first = "INFO", this->status.second = 4;
 		threadID = std::this_thread::get_id();
 
 	}
-	~OneLog(){
-	
+	~OneLog() {
+
 	}
 
-	void setThreadID(int id);
-	size_t getThreadID();
-	
 	std::string getTime()
 	{
 		time_t now = time(0);
 		tm ltm;
-		localtime_s(&ltm, &now);
 
-		return std::to_string(1900 + ltm.tm_year) + " " + std::to_string(1 + ltm.tm_mon) + " " + std::to_string(ltm.tm_mday) +
-			" " + std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1);
+		localtime_s(&ltm, &now);
+		return std::to_string(1900 + ltm.tm_year) + "." + std::to_string(1 + ltm.tm_mon) + "." + std::to_string(ltm.tm_mday) +
+			"." + std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1)+";";
 
 	}
 
 	void setPrefix(std::string prefix) {
 		this->prefix = prefix;
 	}
-	std::string getPrefix(){
+	std::string getPrefix() {
 		return this->prefix;
 	}
 
@@ -73,7 +65,7 @@ public:
 		this->message = message;
 	}
 	std::string  getMessage() {
-	return this-> message;
+		return this->message;
 	}
 	void setStatus(int status) {
 
@@ -91,49 +83,32 @@ public:
 	}
 	int getStatus() {
 
-		
+
 		return status.second;
 	}
-	
+
 	OneLog& operator<<(double a) {
 
-		std::ostringstream streamObj3;
-		// Set Fixed -Point Notation
-		streamObj3 << std::fixed;
-		// Set precision to 2 digits
-		streamObj3.precision(1);
-		//Add double to stream
-		streamObj3 << a;
-		// Get string from output string stream
-		std::string strObj3 = streamObj3.str();
-
-
-
-
-
-
-
+		std::ostringstream streamObj;
+		streamObj << std::fixed;
+		streamObj.precision(1);
+		streamObj << a;
+		std::string strObj3 = streamObj.str();
 		this->message += strObj3;
 		return *this;
 	}
 
 	OneLog& operator<<(std::string msg) {
-		
-		
+
+
 		this->message += msg;
-		stat = true;
 		return *this;
 	}
 
 	OneLog& operator<<(int add) {
-		stat = true;
-		
-		
+
 		this->add.emplace(add);
-		this->message += std::to_string(add)+" ";
-
-
-
+		this->message += std::to_string(add) + " ";
 		return *this;
 	}
 
@@ -144,32 +119,30 @@ public:
 		std::ostringstream ss;
 		ss << std::this_thread::get_id();
 		std::string  idstr = ss.str();
-		std::cout << _perfix;
 
-		if (add.has_value()) {
-			return getTime() + ":" + status.first + ":" + _perfix + ":" + idstr + ":" + message  +";\n";
 
-			
+		if (prefix!="") {
+			return getTime() + ":" + status.first + ":" + _perfix + ":" + idstr + ":" + message + ";\n";
 
 		}
-		
+
 		else
 		{
-		return getTime() + ":" + status.first + ":" + idstr + ":" + message + ";\n";
+			return getTime() + ":" + status.first + ":" + idstr + ":" + message + ";\n";
 		}
-	
+
 	}
 
-	bool stat;
+
 
 protected:
 	std::string  message;
 	std::optional<int>add;
-	 double additional;
-	 std::string  prefix;
-	 std::pair< std::string, int> status ;
-	 std::thread::id threadID;
-	
+	double additional;
+	std::string  prefix;
+	std::pair< std::string, int> status;
+	std::thread::id threadID;
+
 	//....date, prefix, status, sufix
 };
 
@@ -192,25 +165,28 @@ class WrapperLog {
 
 public:
 
-	WrapperLog(WrapperLog& a){
+	WrapperLog(WrapperLog& a) {
 		logType = a.logType;
 		path = a.path;
+		prefix = a.prefix;
 		container = a.container;
 	}
 
-	WrapperLog(std::string perfix=""){
+	WrapperLog(std::string path="",std::string perfix = "") {
 
 
 		if (!container.has_value()) {
 			container = OneLog();
 		}
 		this->prefix = perfix;
-	
+		this->path = path;
+		
+
 
 	}
 
 	OneLog& operator<<(std::string msg) {
-		
+
 		container.emplace(OneLog());
 
 		container.value().setMessage(msg);
@@ -221,13 +197,13 @@ public:
 			container.emplace(OneLog());
 
 		}
-		
+
 		return container.value();
 	}
 
 
 	OneLog& operator()(int status) {
-
+	
 		if (container.value().getMessage() != "") {
 			saveAll();
 		}
@@ -236,14 +212,17 @@ public:
 		return container.value();
 	}
 	void saveAll() {
-		if (logType==LogType::console)
+		if (logType == LogType::console)
 			saveToConsole();
-		else if (logType==LogType::file)
+		else if (logType == LogType::file)
 			saveToFile();
 	}
-	~WrapperLog(){
-		if (container.value().getMessage()!=""){
-		saveAll();
+	~WrapperLog() {
+		
+		if (container.value().getMessage() != "")
+		{
+			container.value().setPrefix(prefix);
+			saveAll();
 		}
 	}
 
@@ -254,16 +233,16 @@ public:
 	std::string prefix;
 
 private:
-static std::mutex mutex;
-	
+	static std::mutex mutex;
+
 	void saveToConsole() {
 		mutex.lock();
 		std::cout << container.value().getLog(prefix);
 		mutex.unlock();
 	}
-	void saveToFile(){
+	void saveToFile() {
 		mutex.lock();
-		std::ofstream MyFile(path, std::ios::out|std::ios::app );
+		std::ofstream MyFile(path, std::ios::out | std::ios::app);
 		MyFile << container.value().getLog(prefix);
 		mutex.unlock();
 	}
@@ -274,7 +253,7 @@ static std::mutex mutex;
 std::mutex WrapperLog::mutex;
 
 WrapperLog getLogger() {
-	
+
 	WrapperLog w;
 	w.logType = LogType::console;
 	return w;
@@ -283,8 +262,7 @@ WrapperLog getLogger() {
 
 WrapperLog getLogger(std::string path) {
 
-	WrapperLog w;
-	w.path = path;
+	WrapperLog w(path);
 	w.logType = LogType::file;
 	return w;
 
@@ -294,10 +272,7 @@ WrapperLog getLogger(std::string path) {
 
 WrapperLog getLogger(std::string path, std::string perfix) {
 
-	WrapperLog w(perfix);
-	w.path = path;
+	WrapperLog w(path,perfix);
 	w.logType = LogType::file;
-
 	return w;
-
 }
