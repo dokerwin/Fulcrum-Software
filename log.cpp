@@ -15,8 +15,8 @@ WrapperLog::WrapperLog(std::string path, std::string perfix)
 {
 
 	if (!container.has_value()) {
-		container = OneLog();
 
+		container = OneLog();
 	}
 	this->prefix = perfix;
 	this->path = path;
