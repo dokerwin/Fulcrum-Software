@@ -118,7 +118,9 @@ std::string OneLog::getTime()
 	time_t now = time(0);
 	tm ltm;
 	localtime_s(&ltm, &now);
-	return std::to_string(1900 + ltm.tm_year) + "." + std::to_string(1 + ltm.tm_mon) + "." + std::to_string(ltm.tm_mday) + " " + std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1) + ";";
+	return std::to_string(1900 + ltm.tm_year) + "." + std::to_string(1 + ltm.tm_mon) + "." 
+		+ std::to_string(ltm.tm_mday) + " " + std::to_string(ltm.tm_hour) + ":"
+		+ std::to_string(ltm.tm_min + 1) + ":" + std::to_string(ltm.tm_sec + 1) + ";";
 
 }
 
@@ -192,14 +194,12 @@ std::string OneLog::getLog(std::string _perfix)
 	std::string  idstr = "(" + ss.str() + "): ";
 	std::string stat = " " + status.first + "; ";
 
-	if (prefix != "") {
+	if (prefix != "") 
 		return getTime() + stat + _perfix + ":" + idstr + message + ";\n";
-	}
-
+	
 	else
-	{
-		return getTime() + stat + idstr + message + ";\n";
-	}
+	    return getTime() + stat + idstr + message + ";\n";
+
 }
 
 std::mutex WrapperLog::mutex;
